@@ -21,4 +21,4 @@ run-dev:
 	watchexec -r -e java "mvn compile exec:java -Dexec.args='-dev' -Djava.awt.headless=true"
 
 run:
-	mvn compile exec:java -Djava.awt.headless=true
+	mvn compile exec:java -Djava.awt.headless=true &
