@@ -47,9 +47,14 @@ public class HandleClanAction extends Shiina {
             return notFound(res, shiina);
         }
 
+        if(!clanPermRS.getString("clan_priv").equals("3")) {
+            return raw(res, shiina, "not_leader");
+        }
+
         if(action == null || userid == null || clanid == null) {
             return notFound(res, shiina);
         }
+        
 
         switch (action.toUpperCase()) {
             case "UNDENY":

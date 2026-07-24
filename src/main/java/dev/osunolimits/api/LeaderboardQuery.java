@@ -86,7 +86,7 @@ public class LeaderboardQuery extends APIQueryGson {
     }
     
     public LeaderboardQuery() {
-        super("leaderboard", 15, 30);
+        super("leaderboard", 5, 30);
     }
 
     public LeaderboardResponse getLeaderboard(String sort, int mode, int limit, int offset, Optional<String> country) {

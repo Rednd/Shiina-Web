@@ -43,7 +43,7 @@
                 <!-- Clan Info -->
                 <div class="col-12 col-md-9 d-flex flex-column justify-content-center text-white" >
                     <div class="mb-2">
-                        <h1 class="display-4 fw-bold mb-2 shiina-player-name">${clan.name}</h1>
+                        <h1 class="display-4 fw-bold mb-2 shiina-player-name">${clan.name?html}</h1>
                     </div>
                     
                     <!-- Owner Info -->
@@ -122,7 +122,7 @@
                             <i class="fa-solid fa-hashtag"></i>
                         </div>
                         <div class="shiina-follower-count-body">
-                            [${clan.tag}]
+                            [${clan.tag?html}]
                         </div>
                     </span>
                 <#else>
@@ -131,7 +131,7 @@
                             <i class="fa-solid fa-hashtag"></i>
                         </div>
                         <div class="shiina-follower-count-body">
-                            [${clan.tag}]
+                            [${clan.tag?html}]
                         </div>
                     </span>
                 </#if>

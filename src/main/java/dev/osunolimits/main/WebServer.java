@@ -55,6 +55,7 @@ public class WebServer extends Spark {
         freemarkerCfg.setLogTemplateExceptions(false);
         freemarkerCfg.setDirectoryForTemplateLoading(new File("templates/"));
         freemarkerCfg.setTemplateUpdateDelayMilliseconds(updateDelay);
+        freemarkerCfg.setAutoEscapingPolicy(Configuration.ENABLE_IF_SUPPORTED_AUTO_ESCAPING_POLICY);
         if(updateDelay == 0) {
             freemarkerCfg.setCacheStorage(new NullCacheStorage());
         }
