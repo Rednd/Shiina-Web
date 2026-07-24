@@ -88,9 +88,9 @@ public class HandleLogin extends Shiina {
         UserInfoCache.reloadUserIfNotPresent(userId);
 
         if (rememberMe) {
-            res.cookie("shiina", new SessionBuilder(userId, req).build(), 604800);
+            res.cookie("shiina", new SessionBuilder(userId, req).build(), 604800, true, true);
         } else {
-            res.cookie("shiina", new SessionBuilder(userId, req).build());
+            res.cookie("shiina", new SessionBuilder(userId, req).build(), 604800 / 7, true, true);
         }
 
         ResultSet dbPrivData = shiina.mysql.Query("SELECT priv FROM users WHERE id = ?", userId);

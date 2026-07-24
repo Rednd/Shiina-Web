@@ -18,12 +18,17 @@ public class HandleClanDisband extends Shiina {
             return notFound(res, shiina);
         }
         int clanId = 0;
-        var clanCheck = shiina.mysql.Query("SELECT u.`clan_id`, c.`name`, c.`tag` FROM `users` u LEFT JOIN `clans` c ON u.`clan_id` = c.`id` WHERE u.`id` = ?", shiina.user.id);
+        var clanCheck = shiina.mysql.Query("SELECT u.`clan_id`, c.`name`, c.`tag`, `u`.`clan_priv` FROM `users` u LEFT JOIN `clans` c ON u.`clan_id` = c.`id` WHERE u.`id` = ?", shiina.user.id);
         if (clanCheck.next()) {
 
             clanId = clanCheck.getInt("clan_id");
             if (clanId == 0) {
                 return raw(res, shiina, "not_in_clan");
+            }
+
+            int clanPriv = clanCheck.getInt("clan_priv");
+            if (clanPriv != 3) {
+                return raw(res, shiina, "not_leader");
             }
 
             Clan clan = new Clan(

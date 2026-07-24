@@ -177,22 +177,78 @@ function unloadTurnstileIfPresent() {
 }
 
 function loadTurnstileIfPresent() {
-    if (document.getElementById("turnstile")) {
-        turnstile.ready(function () {
-        if (document.getElementById("turnstile").innerHTML.length == 0) {
-            console.log("Rendering Turnstile");
-            try {
-                turnstileId = turnstile.render("#turnstile", {
-                sitekey: turnstileToken,
-                callback: function (token) {
-                },
-            });
-            } catch (error) {
-                
-            }
-        }
-    });
+    const el = document.getElementById("turnstile");
+
+    if (!el) return;
+    if (typeof turnstile === "undefined") return;
+    if (el.dataset.loaded === "true") return;
+
+    try {
+        turnstileId = turnstile.render("#turnstile", {
+            sitekey: turnstileToken
+        });
+
+        el.dataset.loaded = "true";
+        console.log("Turnstile rendered");
+    } catch (e) {
+        console.error(e);
     }
+}
+
+// Robust loader: retry a few times if the external script or token isn't available yet.
+function loadTurnstileIfPresentWithRetry() {
+    const el = document.getElementById("turnstile");
+    if (!el) return;
+    if (el.dataset.loaded === "true") return;
+
+    let attempts = 0;
+    const maxAttempts = 20;
+    const delayMs = 200;
+
+    const tryRender = () => {
+        // token may be provided as global `turnstileToken` or as data attribute on the element
+        const token = typeof turnstileToken !== "undefined" ? turnstileToken : el.dataset.token;
+
+        if (typeof turnstile !== "undefined" && token) {
+            try {
+                if (typeof turnstile.render === 'function') {
+                    turnstileId = turnstile.render("#turnstile", { sitekey: token });
+                    el.dataset.loaded = "true";
+                    console.log("Turnstile rendered");
+                } else if (typeof turnstile === 'function') {
+                    // some builds may expose a callable; try as a fallback
+                    try {
+                        turnstileId = turnstile("#turnstile", { sitekey: token });
+                        el.dataset.loaded = "true";
+                        console.log("Turnstile rendered via function fallback");
+                    } catch (err) {
+                        console.warn("Turnstile API present but no callable render; aborting retries.", err);
+                        el.dataset.loaded = "failed";
+                    }
+                } else {
+                    console.warn("Turnstile API present but `render` is not a function; aborting retries.");
+                    el.dataset.loaded = "failed";
+                }
+            } catch (e) {
+                console.error("Turnstile render failed:", e);
+            }
+            return;
+        }
+
+        attempts += 1;
+        if (attempts < maxAttempts) {
+            setTimeout(tryRender, delayMs);
+        } else {
+            console.warn("Turnstile not available after retries");
+        }
+    };
+
+    tryRender();
+}
+
+// Keep the original function name used in the code path but route to the robust loader.
+function loadTurnstileIfPresent() {
+    loadTurnstileIfPresentWithRetry();
 }
 
 function loadComments(firstLoad = true) {
@@ -575,40 +631,60 @@ function initPlayCountGraph() {
     
 }
 
+
 function loadCommentPanel(user, comment, time) {
-    let groups = user.groups;
-    let output = '';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'd-flex align-items-start p-3 border-bottom';
 
-    output += '<div class="d-flex align-items-start p-3 border-bottom">';
-    output += '<div class="me-3">';
-    output += '<img class="rounded mt-1" src="' + avatarServer + '/' + user.id + '" alt="Avatar" width="40" height="40">';
-    output += '</div>';
-    output += '<div class="flex-grow-1">';
-    output += '<div class="d-flex align-items-center mb-2">';
+    const avatarWrapper = document.createElement('div');
+    avatarWrapper.className = 'me-3';
 
-    let groupsDiv = '';
+    const avatar = document.createElement('img');
+    avatar.className = 'rounded mt-1';
+    avatar.src = `${avatarServer}/${encodeURIComponent(user.id)}`;
+    avatar.alt = 'Avatar';
+    avatar.width = 40;
+    avatar.height = 40;
+    avatarWrapper.appendChild(avatar);
 
-    groups.forEach(group => {
-        groupsDiv += '<span class="badge ms-2 shiina-badge bg-light bg-opacity-25 text-white py-1 rounded-pill pe-3"><span class="groupEmoji me-2">' + group.emoji + '</span>' + group.name + '</span>';
+    const content = document.createElement('div');
+    content.className = 'flex-grow-1';
+
+    const header = document.createElement('div');
+    header.className = 'd-flex align-items-center mb-2';
+
+    const link = document.createElement('a');
+    link.href = `/u/${encodeURIComponent(user.id)}`;
+    link.className = `text-decoration-none fw-medium no-a fw-bold${comment.supporter ? ' supporter' : ''}`;
+    link.textContent = user.name;
+    header.appendChild(link);
+
+    user.groups.forEach(group => {
+        const badge = document.createElement('span');
+        badge.className = 'badge ms-2 shiina-badge bg-light bg-opacity-25 text-white py-1 rounded-pill pe-3';
+
+        const emoji = document.createElement('span');
+        emoji.className = 'groupEmoji me-2';
+        emoji.textContent = group.emoji;
+
+        badge.appendChild(emoji);
+        badge.appendChild(document.createTextNode(group.name));
+
+        header.appendChild(badge);
     });
-    
-    let supClass = '';
 
-    if(comment.supporter == true) {
-        supClass += 'supporter'
-    }
-    
-    output += '<a href="/u/' + user.id + '" class="text-decoration-none fw-medium no-a fw-bold ' + supClass + '">' + user.name + '</a>';
-    output += groupsDiv;
-    //output += '<small class="text-muted ms-auto">' + timeUntil(time, true) + '</small>';
-    output += '</div>';
-    output += '<div class="bg-secondary bg-opacity-10 text-body rounded">';
-    output += comment.comment;
-    output += '</div></div></div>';
+    const body = document.createElement('div');
+    body.className = 'bg-secondary bg-opacity-10 text-body rounded';
+    body.textContent = comment.comment;
 
-    return output;
+    content.appendChild(header);
+    content.appendChild(body);
+
+    wrapper.appendChild(avatarWrapper);
+    wrapper.appendChild(content);
+
+    return wrapper.outerHTML;
 }
-
 function loadScorePanel(
     grade, 
     mapId, 

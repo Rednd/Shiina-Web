@@ -1,5 +1,7 @@
 package dev.osunolimits.routes.post;
 
+import org.owasp.encoder.Encode;
+
 import dev.osunolimits.modules.Shiina;
 import dev.osunolimits.modules.ShiinaRoute;
 import dev.osunolimits.modules.ShiinaRoute.ShiinaRequest;
@@ -63,9 +65,11 @@ public class HandleComment extends Shiina {
         if (shiinaAPIHandler.hasIssues()) {
             return shiinaAPIHandler.renderIssues(shiina, res);
         }
+
+        String encodedMessage = Encode.forHtmlContent(message);
         
         if(message.length() > 0)
-            shiina.mysql.Exec("INSERT INTO `comments`(`target_id`, `target_type`, `userid`, `time`, `comment`) VALUES (?,?,?,?,?)", targetId, target.toLowerCase(), shiina.user.id, 0, message);
+            shiina.mysql.Exec("INSERT INTO `comments`(`target_id`, `target_type`, `userid`, `time`, `comment`) VALUES (?,?,?,?,?)", targetId, target.toLowerCase(), shiina.user.id, 0, encodedMessage);
         
         String redirectUrl = "";
 
